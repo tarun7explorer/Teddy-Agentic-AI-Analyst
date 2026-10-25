@@ -26,6 +26,7 @@
       textElement(card, "span", metric.statistic || "calculated", "kpi-statistic");
       textElement(card, "strong", numberLabel(Number(metric.value), metric.unit), "kpi-value");
       textElement(card, "span", metric.label, "kpi-label");
+      textElement(card, "span", `${metric.source_column || "Source data"} · ${referenceLabel(metric.source_reference)}`, "kpi-source");
       container.append(card);
     }
   }
@@ -71,6 +72,20 @@
   }
 
   function renderChart(container, spec) {
+    const labels = Array.isArray(spec?.labels) ? spec.labels.slice(0, 100) : [];
+    const series = Array.isArray(spec?.series) ? spec.series.slice(0, 6) : [];
+    const usable = labels.length >= 2 && series.some((item) =>
+      Array.isArray(item.data) && item.data.length === labels.length
+      && item.data.every((value) => Number.isFinite(Number(value)))
+    );
+    if (!usable) {
+      const note = document.createElement("article");
+      note.className = "chart-card chart-empty-data";
+      textElement(note, "h4", spec?.title || "Chart unavailable", "chart-title");
+      textElement(note, "p", "No complete numeric series was returned for this chart.", "chart-library-warning");
+      container.append(note);
+      return;
+    }
     const card = document.createElement("article");
     card.className = "chart-card";
     card.dataset.sourceReference = JSON.stringify(spec.source_reference || {});
@@ -88,10 +103,10 @@
     if (window.Chart) {
       const isDoughnut = spec.chart_type === "doughnut";
       const chartType = spec.chart_type === "line" ? "line" : isDoughnut ? "doughnut" : "bar";
-      const total = spec.series[0].data.reduce((sum, value) => sum + Number(value || 0), 0);
-      const datasets = spec.series.slice(0, 6).map((series, index) => ({
-        label: series.name,
-        data: series.data,
+      const total = series[0].data.reduce((sum, value) => sum + Number(value || 0), 0);
+      const datasets = series.map((chartSeries, index) => ({
+        label: chartSeries.name,
+        data: chartSeries.data.slice(0, labels.length).map((value) => Number(value)),
         backgroundColor: isDoughnut
           ? spec.labels.map((_, colorIndex) => palette[colorIndex % palette.length])
           : palette[index % palette.length] + (chartType === "line" ? "" : "cc"),
@@ -103,7 +118,7 @@
       }));
       const instance = new window.Chart(canvas.getContext("2d"), {
         type: chartType,
-        data: { labels: spec.labels, datasets },
+        data: { labels, datasets },
         options: {
           responsive: true,
           maintainAspectRatio: false,
@@ -218,10 +233,11 @@
     renderKpis(kpis, analytics?.metrics);
     const charts = (analytics?.charts || []).slice(0, 8);
     for (const spec of charts) renderChart(chartsGrid, spec);
-    chartEmpty.hidden = charts.length > 0;
+    const renderedCharts = chartsGrid.childElementCount;
+    chartEmpty.hidden = renderedCharts > 0;
     const message = chartEmpty.querySelector("p");
     message.textContent = analytics?.warnings?.find((warning) => warning.includes("No chart-ready"))
-      || (charts.length ? "" : "No chart is supported by this document’s extracted data.");
+      || (renderedCharts ? "" : "No chart is supported by this document’s extracted data.");
 
     const comparisons = (analytics?.comparison_tables || []).slice(0, 8);
     comparisonBlock.hidden = comparisons.length === 0;
@@ -241,9 +257,9 @@
     }
     const hasContent = Boolean((analytics?.metrics || []).length || charts.length || comparisons.length || events.length || (analytics?.profiles || []).length);
     content.hidden = !hasContent;
-    chartEmpty.hidden = charts.length > 0;
+    chartEmpty.hidden = renderedCharts > 0;
     chartEmpty.dataset.hasAnalytics = hasContent ? "true" : "false";
-    if (!charts.length && hasContent) chartEmpty.hidden = false;
+    if (!renderedCharts && hasContent) chartEmpty.hidden = false;
   }
 
   window.TeddyCharts = { render, clear };

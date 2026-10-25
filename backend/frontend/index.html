@@ -95,8 +95,14 @@
             </div>
             <p class="download-status" id="download-status" role="status" aria-live="polite" hidden></p>
             <p class="download-error" id="download-error" role="alert" hidden></p>
-            <p class="analysis-note">AI analysis uses extracted passages and only displays findings with source quotes that match the document.</p>
+            <p class="analysis-note">AI findings use extracted passages and matching source quotes. Quote matches show provenance; they do not prove logical support.</p>
             <div class="result-warnings" id="result-warnings" hidden></div>
+            <section class="workflow-overview" id="workflow-overview" aria-label="Workflow and document quality" hidden>
+              <div class="workflow-heading"><div><h4>Document and workflow status</h4><p id="workflow-status" role="status" aria-live="polite"></p></div><span class="workflow-quality" id="workflow-quality"></span></div>
+              <p class="workflow-provider" id="workflow-provider"></p>
+              <p class="workflow-verification" id="workflow-verification"></p>
+              <ul class="workflow-warnings" id="workflow-warnings" hidden></ul>
+            </section>
             <div class="analysis-state" id="analysis-state" hidden aria-live="polite"><span class="analysis-spinner" aria-hidden="true"></span><span id="analysis-state-text">Preparing evidence-grounded analysis…</span></div>
             <p class="upload-error" id="analysis-error" role="alert" hidden></p>
             <div class="extraction-empty" id="extraction-empty" hidden><span aria-hidden="true">◇</span><strong>No text could be extracted</strong><p id="extraction-empty-message">The file was accepted, but there is no extractable content to preview.</p></div>
@@ -128,6 +134,7 @@
               <div class="panel-title"><span class="panel-icon blue-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M3 16V9m5 7V4m5 12v-5m5 5H2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span><div><h3>Visual analytics</h3><p>Numbers, made easier to explore</p></div></div>
               <div class="chart-empty" id="chart-empty-state"><div class="chart-empty-mark" aria-hidden="true">↗</div><p>Charts appear when Teddy finds enough structured data to support them.</p></div>
               <div class="analytics-content" id="analytics-content" hidden>
+                <p class="analytics-provenance">Deterministic calculations from extracted tables. Values retain their source units and references.</p>
                 <div class="analytics-kpis" id="analytics-kpis"></div>
                 <div class="charts-grid" id="charts-grid"></div>
                 <div class="analytics-comparisons" id="analytics-comparisons" hidden><h4>Comparison tables</h4><div id="comparison-tables"></div></div>
@@ -137,8 +144,9 @@
             </article>
             <article class="panel highlights-panel">
               <div class="panel-title"><span class="panel-icon yellow-icon" aria-hidden="true">❝</span><div><h3>Document highlights</h3><p>Important passages, with their sources</p></div></div>
-              <div class="quote-empty"><span class="quote-mark" aria-hidden="true">“</span><div><span class="placeholder-line"></span><span class="placeholder-line medium"></span><span class="placeholder-line short"></span><div class="source-placeholder"><span></span> Page and section references</div></div></div>
-              <p class="panel-empty-caption">Highlights and source references will be grounded in your file.</p>
+              <div class="quote-empty" id="highlights-empty"><span class="quote-mark" aria-hidden="true">“</span><div><span class="placeholder-line"></span><span class="placeholder-line medium"></span><span class="placeholder-line short"></span><div class="source-placeholder"><span></span> Page and section references</div></div></div>
+              <div class="document-highlights" id="document-highlights" hidden></div>
+              <p class="panel-empty-caption" id="highlights-empty-caption">Verified source excerpts appear here when available.</p>
             </article>
             <article class="panel chat-panel" id="chat-panel">
               <div class="panel-title"><span class="panel-icon navy-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M17 9.5a6.5 6.5 0 0 1-6.5 6.5H4l1.1-2.8A6.5 6.5 0 1 1 17 9.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 9.5h.01M10.5 9.5h.01M14 9.5h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><div><h3>Chat with your document</h3><p>Ask a follow-up. Find the source.</p></div></div>

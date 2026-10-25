@@ -3,7 +3,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.api import documents
-from backend.config import settings
+from backend.config import NVIDIA_APPROVED_BASE_URL, settings
 from backend.main import app
 from backend.services import ai_provider, summary_service
 from backend.storage.document_store import DocumentStore
@@ -17,6 +17,11 @@ def ai_client(tmp_path, monkeypatch):
     store = DocumentStore(tmp_path / "uploads", ttl_minutes=30)
     app.dependency_overrides[documents.get_document_store] = lambda: store
     monkeypatch.setattr(settings, "max_upload_size_mb", 10)
+    monkeypatch.setattr(settings, "ai_provider", "nvidia_nim")
+    monkeypatch.setattr(settings, "allow_paid_apis", False)
+    monkeypatch.setattr(settings, "nvidia_nim_free_access_confirmed", True)
+    monkeypatch.setattr(settings, "nvidia_nim_api_base_url", NVIDIA_APPROVED_BASE_URL)
+    monkeypatch.setattr(settings, "nvidia_nim_model", "test-free-model")
     monkeypatch.setattr(settings, "nvidia_nim_api_key", None)
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -97,7 +102,7 @@ def test_missing_credentials_do_not_break_upload(ai_client):
     results = ai_client.get(f"/api/v1/documents/{document_id}/results")
 
     assert response.status_code == 503
-    assert "NVIDIA_NIM_API_KEY" in response.json()["detail"]
+    assert "NVIDIA_API_KEY" in response.json()["detail"]
     assert results.status_code == 200
     assert results.json()["extracted_text"] == SOURCE_TEXT
 

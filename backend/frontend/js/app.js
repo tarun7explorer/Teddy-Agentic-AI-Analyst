@@ -30,6 +30,15 @@ const summaryList = document.querySelector("#summary-list");
 const detailedSummary = document.querySelector("#detailed-summary");
 const findingsList = document.querySelector("#findings-list");
 const analysisWarnings = document.querySelector("#analysis-warnings");
+const workflowOverview = document.querySelector("#workflow-overview");
+const workflowStatus = document.querySelector("#workflow-status");
+const workflowQuality = document.querySelector("#workflow-quality");
+const workflowProvider = document.querySelector("#workflow-provider");
+const workflowVerification = document.querySelector("#workflow-verification");
+const workflowWarnings = document.querySelector("#workflow-warnings");
+const documentHighlights = document.querySelector("#document-highlights");
+const highlightsEmpty = document.querySelector("#highlights-empty");
+const highlightsEmptyCaption = document.querySelector("#highlights-empty-caption");
 const dashboardSummaryEmpty = document.querySelector("#summary-empty");
 const dashboardSummaryContent = document.querySelector("#summary-content");
 const dashboardSummaryList = document.querySelector("#dashboard-summary-list");
@@ -132,6 +141,13 @@ function clearResults() {
   insightsEmptyCaption.hidden = false;
   analysisWarnings.replaceChildren();
   analysisWarnings.hidden = true;
+  workflowOverview.hidden = true;
+  workflowWarnings.replaceChildren();
+  workflowWarnings.hidden = true;
+  documentHighlights.replaceChildren();
+  documentHighlights.hidden = true;
+  highlightsEmpty.hidden = false;
+  highlightsEmptyCaption.hidden = false;
   resetChat();
 }
 
@@ -167,7 +183,7 @@ function resetSelection({ deleteStored = true } = {}) {
   fileInput.value = "";
   dropTitle.textContent = "Drag your file here";
   dropSubtitle.textContent = "or choose one from your device";
-  selectionStatus.textContent = "Files are extracted locally by Teddy’s backend. Select “Analyze with Teddy” for an evidence-grounded summary and findings. Charts and document chat are being implemented incrementally.";
+  selectionStatus.textContent = "Files are extracted by Teddy’s backend. Review the local analytics, ask document-scoped questions, and request an AI summary when an approved provider is available.";
   uploadActions.hidden = true;
   uploadProgress.hidden = true;
   progressFill.style.width = "0%";
@@ -220,6 +236,77 @@ function appendTextElement(parent, tag, text, className) {
   element.textContent = text;
   parent.append(element);
   return element;
+}
+
+function renderWorkflow(workflow, analysis = null) {
+  if (!workflow) return;
+  workflowOverview.hidden = false;
+  const statusLabel = {
+    not_started: "Extraction complete · analysis not started",
+    created: "Workflow created",
+    running: "Workflow running",
+    completed: "Workflow completed",
+    partial: "Partial result · some checks or steps are incomplete",
+    failed: "Workflow failed",
+  }[workflow.status] || "Workflow status unavailable";
+  workflowStatus.textContent = `${statusLabel}. ${workflow.document_assessment?.passage_count || 0} passages, ${workflow.document_assessment?.table_count || 0} tables, ${workflow.document_assessment?.source_reference_count || 0} source references.`;
+
+  const assessment = workflow.document_assessment || {};
+  workflowQuality.textContent = `Extraction quality: ${assessment.extraction_quality || "unknown"}`;
+  workflowQuality.dataset.quality = assessment.extraction_quality || "unknown";
+  const providerStatus = workflow.provider_status || {};
+  workflowProvider.textContent = providerStatus.available
+    ? `AI provider available: ${providerStatus.provider}. ${providerStatus.message || ""}`
+    : `AI unavailable: ${providerStatus.message || "AI analysis is disabled. Local extraction, analytics, and exports remain available."}`;
+
+  const verification = workflow.verification || {};
+  if (verification.claims_checked) {
+    workflowVerification.textContent = `Verification: ${verification.status}. ${verification.claims_with_valid_sources || 0} claims have source matches; quote matching does not prove logical entailment.`;
+  } else if (workflow.status === "not_started") {
+    workflowVerification.textContent = "Verification has not run yet.";
+  } else {
+    workflowVerification.textContent = "No claims were available to verify.";
+  }
+
+  workflowWarnings.replaceChildren();
+  const messages = [
+    ...(workflow.warnings || []).map((item) => item.message),
+    ...(assessment.unsupported_content || []).map((item) => `Coverage limitation: ${item.replaceAll("_", " ")}.`),
+    ...(verification.unresolved_warnings || []),
+  ].filter(Boolean);
+  workflowWarnings.hidden = messages.length === 0;
+  for (const warning of messages.slice(0, 40)) appendTextElement(workflowWarnings, "li", warning);
+
+  const evidence = [...(workflow.evidence || [])];
+  if (!evidence.length && analysis) {
+    const findings = [
+      ...(analysis.five_line_summary || []), analysis.detailed_summary,
+      ...(analysis.key_takeaways || []), ...(analysis.risks || []),
+    ].filter(Boolean);
+    const seen = new Set();
+    for (const finding of findings) for (const citation of finding.citations || []) {
+      const key = `${citation.source_id}|${citation.quote}`;
+      if (citation.quote && !seen.has(key)) {
+        seen.add(key);
+        evidence.push(citation);
+      }
+    }
+  }
+  documentHighlights.replaceChildren();
+  for (const item of evidence.slice(0, 8)) {
+    const entry = document.createElement("article");
+    entry.className = "document-highlight";
+    appendTextElement(entry, "span", formatReference(item.reference), "highlight-reference");
+    appendTextElement(entry, "blockquote", item.quote, "highlight-quote");
+    documentHighlights.append(entry);
+  }
+  const hasEvidence = documentHighlights.childElementCount > 0;
+  documentHighlights.hidden = !hasEvidence;
+  highlightsEmpty.hidden = hasEvidence;
+  highlightsEmptyCaption.hidden = hasEvidence;
+  if (!hasEvidence && workflow.status !== "not_started") {
+    highlightsEmptyCaption.textContent = "No source excerpts were returned for this workflow.";
+  }
 }
 
 function renderWarnings(warnings) {
@@ -304,6 +391,7 @@ function renderResults(result) {
   const fileSize = formatBytes(result.file_size || 0);
   resultMeta.textContent = `${result.original_filename} · ${String(result.detected_file_type).toUpperCase()} · ${fileSize} · ${result.status}`;
   renderWarnings(result.warnings);
+  renderWorkflow(result.workflow, result.analysis || null);
 
   const text = result.extracted_text || "";
   const hasTables = Array.isArray(result.tables) && result.tables.length > 0;
@@ -363,7 +451,7 @@ function activateChat(result) {
   }
 }
 
-function addChatMessage(role, text, { notFound = false, sources = [] } = {}) {
+function addChatMessage(role, text, { notFound = false, sources = [], workflow = null } = {}) {
   const message = document.createElement("article");
   message.className = `chat-message ${role === "user" ? "user-message" : "assistant-message"}`;
   appendTextElement(message, "span", role === "user" ? "You" : "Teddy", "chat-message-label");
@@ -372,6 +460,12 @@ function addChatMessage(role, text, { notFound = false, sources = [] } = {}) {
   bubble.textContent = text;
   if (notFound && role !== "user") bubble.classList.add("not-found-bubble");
   message.append(bubble);
+
+  const verification = workflow?.verification;
+  if (role !== "user" && verification?.claims_checked) {
+    const note = `Verification: ${verification.status}. Source matches are provenance checks; they do not prove entailment.`;
+    appendTextElement(message, "p", note, "chat-verification-note");
+  }
 
   if (role !== "user" && sources.length) {
     const sourceList = document.createElement("div");
@@ -427,10 +521,17 @@ async function sendChatQuestion(questionText = chatQuestion.value) {
     addChatMessage("assistant", payload.answer, {
       notFound: payload.status === "not_found",
       sources: payload.sources || [],
+      workflow: payload.workflow,
     });
+    renderWorkflow(payload.workflow);
   } catch (error) {
     chatError.textContent = error.message || "Teddy could not answer right now. Please try again.";
     chatError.hidden = false;
+    if (!chatQuestion.value) chatQuestion.value = question;
+    fetch(`/api/v1/documents/${encodeURIComponent(state.documentId)}/results`)
+      .then((response) => response.ok ? response.json() : null)
+      .then((result) => { if (result?.workflow) renderWorkflow(result.workflow); })
+      .catch(() => {});
   } finally {
     chatStatus.hidden = true;
     state.chatBusy = false;
@@ -448,7 +549,10 @@ function formatReference(reference) {
   if (reference?.type === "csv") return `CSV row ${reference.row_start}`;
   if (reference?.type === "paragraph") return `Paragraph ${reference.paragraph}`;
   if (reference?.type === "table") return `Table ${reference.table}`;
-  if (reference?.type === "text") return `Lines ${reference.line_start}–${reference.line_end}`;
+  if (reference?.type === "text") {
+    if (reference.line_start != null && reference.line_end != null) return `Lines ${reference.line_start}–${reference.line_end}`;
+    return "Text source";
+  }
   return "Document source";
 }
 
@@ -500,7 +604,8 @@ function renderAnalysis(analysis) {
   analyzeButton.disabled = true;
   analyzeButton.textContent = "Analysis complete";
   downloadSummaryButton.disabled = false;
-  analysisModel.textContent = `Generated with ${analysis.model || "NVIDIA NIM"}`;
+  analysisModel.textContent = `AI-generated findings · ${analysis.model || "configured provider"}`;
+  renderWorkflow(analysis.workflow, analysis);
 
   renderSummaryLines(summaryList, analysis.five_line_summary);
   renderSummaryLines(dashboardSummaryList, analysis.five_line_summary);
@@ -558,6 +663,10 @@ async function runAnalysis() {
     analysisError.textContent = error.message || "Teddy could not analyze this document. Try again.";
     analysisError.hidden = false;
     analyzeButton.disabled = false;
+    fetch(`/api/v1/documents/${encodeURIComponent(state.documentId)}/results`)
+      .then((response) => response.ok ? response.json() : null)
+      .then((result) => { if (result?.workflow) renderWorkflow(result.workflow); })
+      .catch(() => {});
   } finally {
     state.analyzing = false;
     deleteDocumentButton.disabled = false;

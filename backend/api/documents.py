@@ -6,17 +6,24 @@ import secrets
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Path as ApiPath, Response, UploadFile
 from starlette.concurrency import run_in_threadpool
 
-from backend.analytics.data_profiler import profile_document
 from backend.analytics.schemas import AnalyticsResponse
 from backend.config import settings
 from backend.parsers import PARSER_BY_EXTENSION, parse_document
-from backend.services.ai_provider import AIProviderError
+from backend.agents.document_agent import DocumentAgent
+from backend.agents.orchestrator import orchestrator
 from backend.rag.chunker import build_document_chunks
 from backend.services.export_service import report_pdf, safe_export_stem, summary_markdown, table_csv
-from backend.services.summary_service import analyze_document as run_analysis
+from backend.services.ai_service import provider
+from backend.services.workflow_schemas import (
+    ProviderAvailabilityView,
+    VerificationView,
+    WorkflowMetadata,
+    WorkflowWarningView,
+)
+from backend.api.workflow_http import api_error, document_not_found, workflow_http_exception
 from backend.storage.temporary_storage import DocumentStore, document_store
 from backend.utils.file_validation import (
     InvalidFile,
@@ -65,6 +72,8 @@ def _process_document(path: Path, extension: str):
     detected_type, extraction = parse_document(path, extension)
     chat_chunks = build_document_chunks(extraction.source_passages, extraction.extracted_text)
     try:
+        from backend.analytics.data_profiler import profile_document
+
         analytics = profile_document(extraction.tables, extraction.source_passages)
     except Exception:
         logger.exception("Analytics profiling failed")
@@ -102,7 +111,7 @@ async def upload_document(
         extension = get_supported_extension(filename)
     except UnsupportedFileType as exc:
         await file.close()
-        raise HTTPException(status_code=415, detail=str(exc)) from exc
+        raise api_error(415, "unsupported_file_type", str(exc)) from exc
 
     document_id = secrets.token_urlsafe(32)
     temp_path = store.new_temp_path(document_id, extension)
@@ -126,55 +135,70 @@ async def upload_document(
             analytics=analytics.model_dump(mode="json"),
             chat_chunks=chat_chunks,
         )
+        assessment = DocumentAgent().assess(document, "analyze")
+        warning_code = (
+            "unsupported_document_type" if not assessment.supported_type
+            else "empty_content" if assessment.extraction_quality == "empty"
+            else "partial_extraction"
+        )
+        metadata = WorkflowMetadata(
+            status="not_started",
+            partial_result=assessment.extraction_quality in {"partial", "poor", "empty"},
+            completed_steps=[],
+            warnings=[WorkflowWarningView(code=warning_code, message=warning) for warning in assessment.warnings[:32]],
+            document_assessment=assessment.model_dump(mode="json"),
+            analytics=analytics,
+            evidence=[],
+            verification=VerificationView(),
+            provider_status=ProviderAvailabilityView.model_validate(provider.status().model_dump()),
+        )
+        document.workflow = metadata.model_dump(mode="json")
         return document.result_response()
     except UnsupportedFileType as exc:
         _unlink_temp(temp_path)
-        raise HTTPException(status_code=415, detail=str(exc)) from exc
+        raise api_error(415, "unsupported_file_type", str(exc)) from exc
     except (ResourceLimitExceeded, OverflowError) as exc:
         _unlink_temp(temp_path)
-        raise HTTPException(status_code=413, detail=str(exc)) from exc
+        raise api_error(413, "upload_too_large", str(exc)) from exc
     except (InvalidFile, ValueError) as exc:
         _unlink_temp(temp_path)
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        raise api_error(422, "invalid_file", str(exc)) from exc
     except Exception as exc:
         _unlink_temp(temp_path)
         logger.exception("Document parsing failed for document id %s", document_id)
-        raise HTTPException(
-            status_code=422,
-            detail="The document could not be parsed. Check that it is a valid, supported file.",
-        ) from exc
+        raise api_error(422, "document_parse_failed", "The document could not be parsed. Check that it is a valid, supported file.") from exc
 
 
 @router.get("/{document_id}/status")
 async def document_status(
-    document_id: str,
+    document_id: Annotated[str, ApiPath(min_length=1, max_length=160)],
     store: Annotated[DocumentStore, Depends(get_document_store)],
 ) -> dict:
     document = store.get(document_id)
     if document is None:
-        raise HTTPException(status_code=404, detail="Document not found or expired.")
+        raise document_not_found()
     return document.status_response()
 
 
 @router.get("/{document_id}/results")
 async def document_results(
-    document_id: str,
+    document_id: Annotated[str, ApiPath(min_length=1, max_length=160)],
     store: Annotated[DocumentStore, Depends(get_document_store)],
 ) -> dict:
     document = store.get(document_id)
     if document is None:
-        raise HTTPException(status_code=404, detail="Document not found or expired.")
+        raise document_not_found()
     return document.result_response()
 
 
 @router.get("/{document_id}/analytics")
 async def document_analytics(
-    document_id: str,
+    document_id: Annotated[str, ApiPath(min_length=1, max_length=160)],
     store: Annotated[DocumentStore, Depends(get_document_store)],
 ) -> dict:
     document = store.get(document_id)
     if document is None:
-        raise HTTPException(status_code=404, detail="Document not found or expired.")
+        raise document_not_found()
     return document.analytics or AnalyticsResponse(
         status="no_suitable_data", charts=[], metrics=[], comparison_tables=[], timelines=[], profiles=[],
         warnings=["No chart-ready data is available for this document."],
@@ -183,30 +207,24 @@ async def document_analytics(
 
 @router.post("/{document_id}/analyze")
 async def analyze_uploaded_document(
-    document_id: str,
+    document_id: Annotated[str, ApiPath(min_length=1, max_length=160)],
     store: Annotated[DocumentStore, Depends(get_document_store)],
 ) -> dict:
     document = store.get(document_id)
     if document is None:
-        raise HTTPException(status_code=404, detail="Document not found or expired.")
-    if document.analysis is not None:
-        return document.analysis
-    try:
-        response = await run_analysis(
-            document_id=document.document_id,
-            source_passages=document.source_passages,
-            extracted_text=document.extracted_text,
-        )
-    except AIProviderError as exc:
-        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
-    payload = response.model_dump(mode="json")
-    store.save_analysis(document_id, payload)
+        raise document_not_found()
+    workflow = await orchestrator.run(store=store, document_id=document_id, operation="analyze")
+    if workflow.analysis is None:
+        raise workflow_http_exception(workflow.state, "Document analysis could not be completed.")
+    payload = workflow.analysis.model_dump(mode="json")
+    if document.analysis is None:
+        store.save_analysis(document_id, workflow.analysis.model_dump(mode="json", exclude={"workflow"}))
     return payload
 
 
 @router.get("/{document_id}/export/summary.md")
 async def export_summary(
-    document_id: str,
+    document_id: Annotated[str, ApiPath(min_length=1, max_length=160)],
     store: Annotated[DocumentStore, Depends(get_document_store)],
 ) -> Response:
     document = store.get(document_id)
@@ -215,7 +233,7 @@ async def export_summary(
     try:
         content = summary_markdown(document)
     except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        raise api_error(409, "summary_not_available", str(exc)) from exc
     filename = f"{safe_export_stem(document.original_filename)}-summary.md"
     return Response(content, media_type="text/markdown; charset=utf-8", headers={
         "Content-Disposition": f'attachment; filename="{filename}"',
@@ -224,17 +242,17 @@ async def export_summary(
 
 @router.get("/{document_id}/export/report.pdf")
 async def export_report(
-    document_id: str,
+    document_id: Annotated[str, ApiPath(min_length=1, max_length=160)],
     store: Annotated[DocumentStore, Depends(get_document_store)],
 ) -> Response:
     document = store.get(document_id)
     if document is None:
-        raise HTTPException(status_code=404, detail="Document not found or expired.")
+        raise document_not_found()
     try:
         content = await run_in_threadpool(report_pdf, document)
     except Exception as exc:
         logger.exception("PDF report generation failed for document id %s", document_id)
-        raise HTTPException(status_code=500, detail="The PDF report could not be generated.") from exc
+        raise api_error(500, "report_export_failed", "The PDF report could not be generated.") from exc
     filename = f"{safe_export_stem(document.original_filename)}-report.pdf"
     return Response(content, media_type="application/pdf", headers={
         "Content-Disposition": f'attachment; filename="{filename}"',
@@ -243,21 +261,21 @@ async def export_report(
 
 @router.get("/{document_id}/export/tables/{table_index}.csv")
 async def export_table_csv(
-    document_id: str,
+    document_id: Annotated[str, ApiPath(min_length=1, max_length=160)],
     table_index: int,
     store: Annotated[DocumentStore, Depends(get_document_store)],
 ) -> Response:
     document = store.get(document_id)
     if document is None:
-        raise HTTPException(status_code=404, detail="Document not found or expired.")
+        raise document_not_found()
     if table_index < 0 or table_index >= len(document.tables):
-        raise HTTPException(status_code=404, detail="That extracted table is not available for this document.")
+        raise api_error(404, "table_not_found", "That extracted table is not available for this document.")
     table = document.tables[table_index]
     try:
         content = table_csv(table)
     except Exception as exc:
         logger.exception("CSV export failed for document id %s", document_id)
-        raise HTTPException(status_code=500, detail="The selected table could not be exported.") from exc
+        raise api_error(500, "table_export_failed", "The selected table could not be exported.") from exc
     stem = safe_export_stem(document.original_filename)
     table_stem = safe_export_stem(str(table.get("name") or f"table-{table_index + 1}"))
     filename = f"{stem}-{table_stem}.csv"
@@ -268,9 +286,9 @@ async def export_table_csv(
 
 @router.delete("/{document_id}")
 async def delete_document(
-    document_id: str,
+    document_id: Annotated[str, ApiPath(min_length=1, max_length=160)],
     store: Annotated[DocumentStore, Depends(get_document_store)],
 ) -> dict:
     if not store.delete(document_id):
-        raise HTTPException(status_code=404, detail="Document not found or expired.")
+        raise document_not_found()
     return {"document_id": document_id, "status": "deleted"}

@@ -1,13 +1,16 @@
 """In-memory document metadata with expiring temporary source files."""
 
+from __future__ import annotations
+
 import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from backend.config import settings
-from backend.parsers.models import ExtractionResult
+if TYPE_CHECKING:
+    from backend.parsers.models import ExtractionResult
 
 
 @dataclass
@@ -28,6 +31,7 @@ class StoredDocument:
     temp_path: Path
     analysis: dict[str, Any] | None = None
     analytics: dict[str, Any] | None = None
+    workflow: dict[str, Any] | None = None
     chat_history: list[dict[str, str]] = field(default_factory=list)
 
     def status_response(self) -> dict[str, Any]:
@@ -53,6 +57,8 @@ class StoredDocument:
             result["analysis"] = self.analysis
         if self.analytics is not None:
             result["analytics"] = self.analytics
+        if self.workflow is not None:
+            result["workflow"] = self.workflow
         return result
 
 
@@ -90,6 +96,12 @@ class DocumentStore:
             document = self._documents.get(document_id)
             if document is not None:
                 document.analysis = analysis
+
+    def save_workflow(self, document_id: str, workflow: dict[str, Any]) -> None:
+        with self._lock:
+            document = self._documents.get(document_id)
+            if document is not None:
+                document.workflow = workflow
 
     def get_chat_history(self, document_id: str) -> list[dict[str, str]]:
         with self._lock:

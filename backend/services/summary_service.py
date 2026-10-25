@@ -6,7 +6,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from backend.config import settings
-from backend.services.ai_provider import AIInvalidResponse, provider
+from backend.services.ai_service import AIInvalidResponse, provider
 from backend.services.insight_service import verify_statement
 from backend.services.schemas import (
     AnalysisResponse,
@@ -60,6 +60,17 @@ def _pack_passages(passages: list[dict[str, Any]]) -> tuple[list[list[dict[str, 
         chunks = chunks[: settings.max_ai_chunks]
         omitted = True
     return chunks, omitted
+
+
+def build_analysis_source_map(
+    source_passages: list[dict[str, Any]], extracted_text: str = "",
+) -> dict[str, dict[str, Any]]:
+    """Rebuild the exact bounded source IDs used by analysis for later verification."""
+    passages = source_passages
+    if not passages and extracted_text.strip():
+        passages = [{"source_id": "document-text", "reference": {"type": "document"}, "text": extracted_text}]
+    chunks, _ = _pack_passages(passages)
+    return {passage["source_id"]: passage for chunk in chunks for passage in chunk}
 
 
 def _compact_findings(items: list[SupportedFinding]) -> list[SupportedFinding]:
@@ -144,7 +155,8 @@ async def analyze_document(
 
     return AnalysisResponse(
         document_id=document_id,
-        model=settings.nvidia_nim_model,
+        provider=provider.status().provider,
+        model=provider.model_name or "unknown",
         five_line_summary=summary_lines[:5],
         detailed_summary=detailed,
         key_takeaways=_compact_findings(takeaways),

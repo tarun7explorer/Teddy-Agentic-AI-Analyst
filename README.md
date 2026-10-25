@@ -43,13 +43,17 @@ The health check is available at <http://127.0.0.1:8000/health> and returns:
 {"status":"ok","service":"teddy"}
 ```
 
-## NVIDIA NIM analysis
+## Optional AI providers
 
-Set `NVIDIA_NIM_API_KEY` in the local `.env` file or the hosting provider's secret environment settings to enable analysis. The key stays on the backend. The NIM API base URL, model, timeout, generation settings, maximum AI input, chunk size, and chunk count are configurable in `.env.example`. Do not commit `.env` or paste the key into frontend code.
+AI is disabled by default: `AI_PROVIDER=none` performs no external AI calls. The application sets `ALLOW_PAID_APIS=false` and does not provide a paid mode, automatic provider fallback, or billing setup. Extraction, local analytics, chat retrieval, citation checks, and supported exports continue to use local application code when AI is unavailable.
 
-`POST /api/v1/documents/{document_id}/analyze` analyzes the content already extracted at upload time; it does not parse the document again. Analysis output is cached with the in-memory document record. Missing credentials produce a clear service response while upload and extraction continue to work.
+NVIDIA NIM can be selected only after you independently confirm genuinely free developer API access for the exact account, endpoint, model, and applicable quota. Configure `AI_PROVIDER=nvidia_nim`, `NVIDIA_NIM_FREE_ACCESS_CONFIRMED=true`, `NVIDIA_API_KEY`, `NVIDIA_MODEL`, and the approved `NVIDIA_BASE_URL`. Keep the key in the backend environment only. A provider/model name, consumer app, or playground is not proof of free API access.
 
-The AI receives bounded source passages. Long documents are summarized in configured sections, and the response is retained only when its quoted evidence matches a supplied extracted passage. Unsupported model claims and unverified source IDs are omitted. This reduces fabricated citations but does not replace human review of AI-written interpretations. NVIDIA API availability, model access, rate limits, and latency depend on the selected NIM endpoint and account.
+Grok is disabled unless `AI_PROVIDER=grok`, `ENABLE_GROK=true`, `GROK_FREE_API_ACCESS_CONFIRMED=true`, `XAI_API_KEY`, and `XAI_MODEL` are all configured. Enable it only after separately confirming genuinely free API access on the account; consumer Grok access does not qualify.
+
+These confirmation settings are safety gates, not live checks of pricing, account eligibility, or remaining free quota. Free availability is not guaranteed. If access is unavailable or exhausted, AI requests stop with a safe error; there is no silent paid fallback or retry for authentication, rate-limit, quota, billing, or payment-required errors. Never commit `.env` or put credentials in frontend code.
+
+`POST /api/v1/documents/{document_id}/analyze` analyzes the content extracted at upload time; it does not parse the document again. Results are cached in the in-memory document record. AI output is bounded, schema-validated, and checked for source provenance. Matching quotations do not prove logical support, so AI-written interpretations still need human review.
 
 ## Data-grounded analytics
 

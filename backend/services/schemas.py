@@ -4,6 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from backend.services.workflow_schemas import WorkflowMetadata
+
 
 class ModelEvidence(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -67,3 +69,4 @@ class AnalysisResponse(BaseModel):
     decisions: list[SupportedFinding]
     action_items: list[SupportedFinding]
     warnings: list[str] = Field(default_factory=list)
+    workflow: WorkflowMetadata | None = None

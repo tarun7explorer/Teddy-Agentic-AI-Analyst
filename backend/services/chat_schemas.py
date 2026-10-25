@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.services.schemas import ModelEvidence, SourceCitation
+from backend.services.workflow_schemas import WorkflowMetadata
 
 
 class ChatRequest(BaseModel):
@@ -32,3 +33,4 @@ class ChatResponse(BaseModel):
     status: Literal["answered", "not_found"]
     answer: str
     sources: list[SourceCitation] = Field(default_factory=list, max_length=8)
+    workflow: WorkflowMetadata | None = None
