@@ -1,0 +1,114 @@
+smart-ai-analyst/
+│
+├── backend/
+│   ├── main.py
+│   ├── config.py
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   ├── render.yaml
+│   │
+│   ├── frontend/
+│   │   ├── index.html
+│   │   ├── css/
+│   │   │   ├── style.css
+│   │   │   ├── dashboard.css
+│   │   │   ├── upload.css
+│   │   │   ├── chat.css
+│   │   │   └── responsive.css
+│   │   ├── js/
+│   │   │   ├── app.js
+│   │   │   ├── api.js
+│   │   │   ├── upload.js
+│   │   │   ├── dashboard.js
+│   │   │   ├── summary.js
+│   │   │   ├── charts.js
+│   │   │   ├── chat.js
+│   │   │   ├── progress.js
+│   │   │   └── utils.js
+│   │   └── assets/
+│   │       ├── logo.svg
+│   │       ├── favicon.ico
+│   │       └── icons/
+│   │
+│   ├── api/
+│   │   ├── upload.py
+│   │   ├── analysis.py
+│   │   ├── jobs.py
+│   │   ├── chat.py
+│   │   └── health.py
+│   │
+│   ├── workers/
+│   │   ├── job_manager.py
+│   │   ├── analysis_worker.py
+│   │   ├── task_status.py
+│   │   └── retry_handler.py
+│   │
+│   ├── parsers/
+│   │   ├── pdf_parser.py
+│   │   ├── word_parser.py
+│   │   ├── excel_parser.py
+│   │   ├── powerpoint_parser.py
+│   │   ├── csv_parser.py
+│   │   ├── text_parser.py
+│   │   └── image_parser.py
+│   │
+│   ├── services/
+│   │   ├── ai_service.py
+│   │   ├── summary_service.py
+│   │   ├── insight_service.py
+│   │   ├── chart_service.py
+│   │   ├── chat_service.py
+│   │   └── citation_service.py
+│   │
+│   ├── analytics/
+│   │   ├── data_profiler.py
+│   │   ├── statistics.py
+│   │   ├── chart_selector.py
+│   │   └── anomaly_detection.py
+│   │
+│   ├── rag/
+│   │   ├── chunker.py
+│   │   ├── retriever.py
+│   │   ├── context_builder.py
+│   │   └── source_mapper.py
+│   │
+│   ├── db/
+│   │   ├── __init__.py
+│   │   ├── database.py
+│   │   ├── session.py
+│   │   ├── models.py
+│   │   ├── schemas.py
+│   │   ├── repositories.py
+│   │   ├── migrations/
+│   │   │   └── README.md
+│   │   └── vector_store/
+│   │       ├── base.py
+│   │       ├── embeddings.py
+│   │       └── vector_client.py
+│   │
+│   ├── storage/
+│   │   ├── file_manager.py
+│   │   ├── temporary_storage.py
+│   │   └── cleanup.py
+│   │
+│   ├── tmp/
+│   │   ├── uploads/
+│   │   └── processed/
+│   │
+│   ├── utils/
+│   │   ├── file_validation.py
+│   │   ├── text_cleaning.py
+│   │   ├── logging.py
+│   │   └── timing.py
+│   │
+│   └── tests/
+│       ├── test_upload.py
+│       ├── test_parsers.py
+│       ├── test_analysis.py
+│       ├── test_jobs.py
+│       ├── test_chat.py
+│       └── test_database.py
+│
+├── .env.example
+├── .gitignore
+└── README.md

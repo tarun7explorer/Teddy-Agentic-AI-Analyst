@@ -1,0 +1,399 @@
+# Teddy – Smart AI Analyst
+## Complete Project Overview, Technology Stack, User Experience & Deployment Plan
+
+### 1. Project Overview
+
+**Teddy – Smart AI Analyst** is an AI-powered universal document analysis platform that transforms uploaded files into concise summaries, meaningful insights, interactive graphs, highlighted information, and document-specific AI conversations.
+
+The application will use a simple, attractive frontend built with HTML, CSS, and JavaScript, supported by a Python FastAPI backend and a free-tier AI API wherever available.
+
+The goal is to create a polished, engaging, and easy-to-use product where users can upload a document, quickly understand its contents, explore important findings visually, and ask follow-up questions without reading the entire file.
+
+**Core vision:** Upload any supported document. Get the important information, visual insights, and answers in one place.
+
+Performance target: Deliver initial results within 5–10 seconds for supported, reasonably sized documents under suitable conditions. Files up to 100 MB may be accepted, but processing time depends on document complexity, OCR, API latency, and hosting resources.
+
+---
+
+### 2. Technology Stack
+
+#### Frontend — Simple, Fast and Attractive
+
+- HTML5 — application structure and accessible content.
+- CSS3 — modern layouts, gradients, animations, responsive design, and visual effects.
+- Vanilla JavaScript — upload handling, API communication, dashboard rendering, and chat interactions.
+- Chart.js — interactive bar charts, line charts, pie charts, and other suitable visualizations.
+- Lucide Icons — clean and consistent interface icons.
+- Google Fonts or locally hosted fonts — professional typography.
+
+No React, Next.js, TypeScript, or other frontend framework is required.
+
+#### Backend — Python + FastAPI
+
+- Python — document processing and analysis logic.
+- FastAPI — REST API endpoints and application server.
+- Pydantic — validation of requests and structured AI responses.
+- Uvicorn — application server.
+
+#### AI Model
+
+Primary provider: NVIDIA NIM API.
+
+- Select a fast, instruction-following model suitable for summarization and structured outputs.
+- Use a vision-capable model when image understanding is required.
+- Check the selected model's actual free availability, input support, rate limits, and context window.
+
+Alternative provider: Grok API by xAI.
+
+- Support switching providers through a common AI service interface.
+- Use Grok only when suitable API access or credits are available.
+
+The AI should return structured JSON containing summaries, key findings, source references, and chart specifications. API keys must remain in backend environment variables.
+
+#### Document Processing Libraries
+
+- PyMuPDF — PDF text extraction and page references.
+- python-docx — Word documents.
+- Pandas and OpenPyXL — Excel and CSV processing.
+- python-pptx — PowerPoint files.
+- Pillow — image processing.
+- Tesseract OCR or another suitable OCR engine — scanned documents and images.
+- A compatible vision model — image descriptions and visual understanding.
+
+#### Data Visualization
+
+- Chart.js — render interactive graphs in the browser.
+- Pandas and NumPy — calculate actual numerical statistics and chart-ready data.
+- Python-based chart selection — choose appropriate visualizations according to the extracted data.
+
+#### Document Chat
+
+- Retrieval-augmented generation (RAG).
+- Text chunking and relevant-section retrieval.
+- Source and page references wherever available.
+- In-memory session storage for the initial MVP, with optional persistent storage later.
+
+#### Hosting
+
+- Render — host the application through a combined deployment.
+- GitHub — source control and deployment integration.
+- Docker — optional, useful for consistent deployment environments.
+
+The frontend and FastAPI backend should be served through one Render web service where practical, giving the user one application URL.
+
+
+### 4. Desired Input
+
+Users should be able to upload files through an attractive drag-and-drop interface or a standard file browser.
+
+Supported file types:
+
+- PDF (.pdf)
+- Word (.docx)
+- Excel (.xlsx and supported .xls files)
+- PowerPoint (.pptx)
+- CSV (.csv)
+- Text (.txt)
+- Images (.jpg, .jpeg, .png, and other explicitly supported formats)
+
+Maximum upload size: 100 MB per file, subject to hosting and request limits.
+
+Upload interface requirements:
+
+- Drag-and-drop upload zone.
+- Browse Files button.
+- File-type icons.
+- File name and file size.
+- Upload progress indicator.
+- Remove or replace file option.
+- Clear validation errors.
+- Analyze Document button.
+- Processing status and cancellation where supported.
+
+The design should look inviting from the moment the user opens the application, rather than presenting a plain upload form.
+
+The backend must validate the actual file type and size instead of trusting the filename alone.
+
+---
+
+### 5. Core Feature One — Smart Summary Engine
+
+After a file is uploaded, Teddy should extract and summarize its actual contents.
+
+Required output:
+
+- Five-line executive summary.
+- Detailed summary on demand.
+- Key takeaways and important points.
+- Important names, dates, entities, and numerical figures.
+- Important quotations and highlighted passages.
+- Risks, issues, decisions, and action items when relevant.
+- Main topics and conclusions.
+- Source page numbers, sections, or passages wherever available.
+
+The summary should use simple, professional language, with the most important information displayed first.
+
+Users should be able to expand detailed sections, copy the summary, and export the results.
+
+---
+
+### 6. Core Feature Two — Automatic Graph Generator
+
+Teddy should analyze the extracted content and determine whether meaningful visualizations can be generated.
+
+Supported outputs:
+
+- Bar charts for comparisons.
+- Line charts for trends over time.
+- Pie or doughnut charts for proportions.
+- Histograms for numerical distributions.
+- KPI cards for important metrics.
+- Comparison tables.
+- Timelines for important events.
+- Data tables for extracted numerical information.
+
+For Excel and CSV files, Python should calculate the statistics and provide validated chart data.
+
+For text-heavy documents, the application should prioritize key findings, timelines, entity summaries, and highlighted passages instead of creating irrelevant charts.
+
+Each graph should have a clear title, meaningful labels, and appropriate units. Users should be able to inspect underlying data and interact with the charts.
+
+---
+
+### 7. Core Feature Three — Chat With Your Document
+
+The application should include a document-specific AI chat panel inside the analysis dashboard.
+
+Example questions:
+
+- Summarize the five most important findings.
+- Explain this document in simple language.
+- What are the major risks?
+- What is the total revenue?
+- Compare the figures across different years.
+- Which dates and deadlines are mentioned?
+- Where is this information found in the document?
+
+Requirements:
+
+- Natural-language questions.
+- Follow-up conversations about the active document.
+- Source references and page numbers wherever available.
+- Suggested questions generated from the document.
+- Copyable answers.
+- Reuse of extracted content for faster responses.
+- Clear messages when the requested information is absent.
+
+The assistant must not fabricate facts or numerical results. Answers should be grounded in the uploaded document, with citations to relevant passages whenever possible.
+
+---
+
+### 8. The Most Important Part — Attractive Analysis Dashboard
+
+The output must be visually impressive, engaging, and easy to understand. It should feel like a premium AI analytics product rather than a simple summarization website.
+
+#### A. Dashboard Header
+
+Display:
+- Teddy branding.
+- Current document name.
+- Detected file type.
+- Analysis status.
+- Export Report button.
+- New Analysis button.
+
+#### B. Executive Summary
+
+Place the five-line summary near the top of the dashboard.
+
+Include:
+- Clear section heading.
+- Important findings emphasized visually.
+- Expand/collapse control for the detailed summary.
+- Copy Summary action.
+
+#### C. Key Insights
+
+Display important findings using attractive cards.
+
+Possible cards include:
+- Key figures.
+- Important dates.
+- Major conclusions.
+- Critical risks.
+- Required actions.
+
+Only display cards supported by the document's content.
+
+#### D. Interactive Analytics
+
+Show automatically selected charts and KPI cards in a responsive grid.
+
+- Two-column chart layout on larger screens.
+- Single-column layout on mobile.
+- Tooltips and hover details.
+- Consistent chart styling.
+- Data tables available for verification.
+
+#### E. Document Highlights
+
+Display important passages and extracted information.
+
+Where page information is available, clicking a reference should open the corresponding document page or source passage.
+
+#### F. Document Chat
+
+Integrate chat into the same dashboard rather than forcing the user to navigate to a separate application.
+
+Suggested questions should be displayed when the chat is empty. Responses should be easy to read and include source references where possible.
+
+#### G. Export Options
+
+Allow users to:
+- Download the summary.
+- Export a professionally formatted PDF report.
+- Download extracted tables as CSV when appropriate.
+
+---
+
+### 9. UI/UX Design Requirements
+
+The interface should be modern, polished, and memorable.
+
+Design direction:
+
+- Premium AI SaaS appearance.
+- Clean white or soft-neutral backgrounds.
+- Deep navy typography.
+- Restrained violet, indigo, or blue accents.
+- Subtle gradients.
+- Rounded cards and consistent spacing.
+- Modern typography such as Inter or Geist.
+- Smooth transitions and purposeful hover effects.
+- Lucide icons.
+- Responsive layouts for desktop, tablet, and mobile.
+
+The upload screen should have a prominent drop zone and a strong call to action.
+
+The analysis screen should prioritize the summary, key findings, and relevant visualizations without overwhelming the user.
+
+The loading experience should show real processing stages, such as identifying the file, extracting content, generating insights, and preparing the dashboard. Do not display fabricated progress percentages.
+
+Use skeleton cards, helpful empty states, visible error messages, and reduced-motion support where appropriate.
+
+---
+
+### 10. End-to-End Workflow
+
+1. The user opens Teddy – Smart AI Analyst.
+2. The user drags a file into the upload area or selects it through the browser.
+3. The frontend validates the file's basic type and size.
+4. JavaScript sends the file to FastAPI using a multipart upload request.
+5. The backend validates the file and selects the correct parser.
+6. The parser extracts text, tables, numerical data, or OCR content.
+7. The AI model generates a structured summary and key insights.
+8. Python calculates relevant numerical statistics.
+9. The chart-selection logic identifies meaningful visualizations.
+10. FastAPI returns structured analysis results.
+11. JavaScript renders the summary, insight cards, charts, and source references.
+12. The user asks follow-up questions through the document chat.
+13. The backend retrieves relevant document content and generates a grounded answer.
+14. The user exports the report or starts another analysis.
+15. Temporary files are cleaned up according to the application's retention policy.
+
+---
+
+### 11. API Design
+
+Recommended endpoints:
+
+- GET /health — Check application health.
+- POST /api/v1/documents/upload — Validate and accept a document.
+- POST /api/v1/documents/{document_id}/analyze — Start document analysis.
+- GET /api/v1/documents/{document_id}/status — Check analysis status.
+- GET /api/v1/documents/{document_id}/results — Retrieve analysis results.
+- POST /api/v1/documents/{document_id}/chat — Ask a question about the document.
+- DELETE /api/v1/documents/{document_id} — Delete a document and its associated temporary data.
+
+For the MVP, straightforward request-response processing can be used for small documents, with strict timeouts. Larger documents should use a background-processing approach where appropriate.
+
+---
+
+### 12. Performance Requirements
+
+Target: Initial useful results within 5–10 seconds for supported, reasonably sized documents under suitable conditions.
+
+Optimization strategies:
+
+- Use fast local text extraction.
+- Avoid OCR unless necessary.
+- Select a low-latency AI model.
+- Minimize redundant AI calls.
+- Use structured AI output.
+- Calculate numerical statistics with Python.
+- Render charts directly in JavaScript.
+- Cache extracted content for follow-up questions.
+- Enforce request timeouts and concurrency limits.
+- Return an initial summary before deeper analysis when useful.
+
+The 100 MB limit refers to upload size, not guaranteed processing speed. Large scanned PDFs, complex Excel workbooks, image-heavy files, and simultaneous uploads may take considerably longer.
+
+---
+
+### 13. Hosting on Render
+
+Render will be the primary hosting platform for the initial deployment.
+
+Recommended configuration:
+
+- One GitHub repository.
+- A FastAPI application serving the HTML, CSS, and JavaScript frontend.
+- Python backend endpoints under the same domain.
+- Environment variables for AI credentials.
+- A health-check endpoint.
+- Temporary file processing and cleanup.
+- Application logging and error handling.
+
+This arrangement avoids maintaining a separate frontend deployment and gives users one public application URL.
+
+Render Free is suitable for an initial portfolio MVP, subject to its resource limits, sleep behavior, request constraints, and ephemeral filesystem. Do not rely on its local filesystem for permanent document storage.
+
+The project should not require a paid AI API by design, but free API access and free hosting remain subject to current provider limits and availability.
+
+---
+
+### 14. Security and Reliability
+
+- Keep API keys exclusively on the backend.
+- Validate file types, signatures, and file sizes.
+- Reject unsupported and corrupted files gracefully.
+- Protect against malicious document content and prompt injection.
+- Never execute uploaded files or spreadsheet macros.
+- Limit processing time and concurrent large uploads.
+- Clean up temporary files.
+- Avoid logging sensitive document contents.
+- Apply appropriate access controls to document IDs and source references.
+- Clearly communicate how documents are processed and retained.
+
+---
+
+### 15. Final Product Definition
+
+Teddy – Smart AI Analyst should provide one simple, complete workflow:
+
+**Upload → Understand → Visualize → Ask → Export.**
+
+The user should be able to upload a supported document, receive an understandable summary, explore important information through relevant graphs and highlights, and ask questions about the document from the same attractive dashboard.
+
+The core priorities are:
+
+1. A simple HTML, CSS, and JavaScript frontend.
+2. Fast and accurate document extraction and AI analysis.
+3. Relevant, data-grounded visualizations.
+4. Document-specific chat with source references.
+5. A polished, engaging, responsive UI/UX.
+6. One-platform deployment through Render.
+7. Free-tier-first development with a modular AI provider integration.
+8. Secure file handling and realistic performance expectations.
+
+The first development milestone should deliver a fully functional MVP with upload, extraction, summarization, relevant graphs, and document chat. Additional features should be introduced after the initial version has been tested for accuracy, usability, and performance.

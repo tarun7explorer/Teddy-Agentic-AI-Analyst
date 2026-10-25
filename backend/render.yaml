@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: teddy-smart-ai-analyst
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: NVIDIA_NIM_API_KEY
+        sync: false
+      - key: MAX_UPLOAD_SIZE_MB
+        value: "10"
+      - key: DOCUMENT_TTL_MINUTES
+        value: "30"

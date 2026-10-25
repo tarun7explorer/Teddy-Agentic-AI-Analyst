@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f7fb" />
+    <meta name="description" content="Teddy helps you understand documents with clear summaries, insights, charts, and grounded answers." />
+    <link rel="icon" href="/assets/favicon.ico" sizes="any" />
+    <title>Teddy – Smart AI Analyst</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js" defer></script>
+    <script src="/js/charts.js" defer></script>
+    <script src="/js/app.js" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="Teddy home">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+          <span class="brand-copy"><strong>Teddy</strong><small>SMART AI ANALYST</small></span>
+        </a>
+        <nav class="top-nav" aria-label="Main navigation">
+          <a class="nav-link active" href="#workspace">Workspace</a>
+          <a class="nav-link" href="#how-it-works">How it works</a>
+        </nav>
+        <div class="topbar-note"><span class="status-dot"></span> Early access <span class="beta-pill">BETA</span></div>
+      </header>
+
+      <main id="top">
+        <section class="hero" id="workspace">
+          <div class="hero-copy">
+            <div class="eyebrow"><span class="sparkle" aria-hidden="true">✳</span> YOUR DOCUMENTS, IN FOCUS</div>
+            <h1>Make sense of<br /><span>the whole story.</span></h1>
+            <p class="hero-description">Bring a document. Leave with the clarity to know what matters, what changed, and what to ask next.</p>
+            <div class="hero-points">
+              <span><i class="check-icon" aria-hidden="true">✓</i> Clear, grounded insights</span>
+              <span><i class="check-icon" aria-hidden="true">✓</i> Your data stays yours</span>
+            </div>
+          </div>
+
+          <section class="upload-card" aria-labelledby="upload-heading">
+            <div class="card-heading-row">
+              <div>
+                <div class="step-label"><span>01</span> START WITH A FILE</div>
+                <h2 id="upload-heading">Drop in a document</h2>
+              </div>
+              <div class="upload-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14.5v3A2.5 2.5 0 0 0 7.5 20h9a2.5 2.5 0 0 0 2.5-2.5v-3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Choose or drop a document">
+              <input id="file-input" class="visually-hidden" type="file" accept=".pdf,.docx,.xlsx,.csv,.txt" />
+              <div class="file-stack" aria-hidden="true"><span class="file-sheet sheet-back"></span><span class="file-sheet sheet-front"><span></span><span></span><span></span></span><span class="plus-badge">+</span></div>
+              <p class="drop-title" id="drop-title">Drag your file here</p>
+              <p class="drop-subtitle" id="drop-subtitle">or choose one from your device</p>
+              <button class="browse-button" id="browse-button" type="button">Browse files <span aria-hidden="true">↗</span></button>
+              <p class="file-types">PDF, DOCX, XLSX, CSV, TXT · up to 10 MB</p>
+            </div>
+            <div class="upload-footer">
+              <span class="privacy-note"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4" y="8" width="12" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Temporary storage</span>
+              <span class="limit-note" id="upload-size-note">Up to 10 MB</span>
+            </div>
+            <p class="coming-note" id="selection-status" aria-live="polite">Upload a document to extract its contents, review supported insights and charts, ask grounded questions, and export your results.</p>
+            <div class="upload-actions" id="upload-actions" hidden>
+              <button class="primary-action" id="submit-upload" type="button">Upload and extract</button>
+              <button class="text-action" id="remove-selection" type="button">Remove file</button>
+            </div>
+            <div class="upload-progress" id="upload-progress" hidden aria-live="polite">
+              <div class="progress-label"><span id="upload-stage">Preparing upload…</span><span id="upload-percent"></span></div>
+              <div class="progress-track"><span id="upload-progress-fill"></span></div>
+            </div>
+            <p class="upload-error" id="upload-error" role="alert" hidden></p>
+            <p class="fine-print">Single-user demo: there is no sign-in. Anyone who obtains a document ID can access it until it expires. Do not upload sensitive documents.</p>
+          </section>
+        </section>
+
+        <section class="workspace-section" aria-labelledby="workspace-heading">
+          <div class="section-heading">
+            <div><div class="step-label"><span>02</span> YOUR ANALYSIS WORKSPACE</div><h2 id="workspace-heading">Everything, thoughtfully organized.</h2></div>
+            <span class="building-badge"><span></span> Your document workspace</span>
+          </div>
+          <section class="document-results" id="document-results" aria-labelledby="results-heading" hidden>
+            <div class="results-header">
+              <div><div class="step-label"><span>EXTRACTED</span> DOCUMENT CONTENT</div><h3 id="results-heading">Your document is ready to explore.</h3><p class="result-meta" id="result-meta"></p></div>
+              <div class="result-actions">
+                <button class="primary-action" id="analyze-document" type="button">Analyze with Teddy</button>
+                <button class="export-action" id="download-summary" type="button" disabled>Download summary</button>
+                <button class="export-action" id="download-report" type="button">Download PDF report</button>
+                <button class="text-action" id="new-analysis" type="button">New analysis</button>
+                <button class="text-action result-remove" id="delete-document" type="button">Delete document</button>
+              </div>
+            </div>
+            <p class="download-status" id="download-status" role="status" aria-live="polite" hidden></p>
+            <p class="download-error" id="download-error" role="alert" hidden></p>
+            <p class="analysis-note">AI analysis uses extracted passages and only displays findings with source quotes that match the document.</p>
+            <div class="result-warnings" id="result-warnings" hidden></div>
+            <div class="analysis-state" id="analysis-state" hidden aria-live="polite"><span class="analysis-spinner" aria-hidden="true"></span><span id="analysis-state-text">Preparing evidence-grounded analysis…</span></div>
+            <p class="upload-error" id="analysis-error" role="alert" hidden></p>
+            <div class="extraction-empty" id="extraction-empty" hidden><span aria-hidden="true">◇</span><strong>No text could be extracted</strong><p id="extraction-empty-message">The file was accepted, but there is no extractable content to preview.</p></div>
+            <div class="extracted-text-block" id="extracted-text-block"><div class="result-subheading"><h4>Extracted text</h4><span id="text-character-count"></span></div><pre class="extracted-text" id="extracted-text"></pre></div>
+            <div class="source-list-block" id="source-list-block" hidden><div class="result-subheading"><h4>Source references</h4></div><div class="source-chips" id="source-chips"></div></div>
+            <div class="tables-block" id="tables-block" hidden><div class="result-subheading"><h4>Extracted tables</h4><span id="table-count"></span></div><div class="table-previews" id="table-previews"></div></div>
+            <section class="analysis-output" id="analysis-output" hidden aria-label="AI analysis results">
+              <div class="analysis-output-heading"><div class="step-label"><span>AI ANALYSIS</span> SOURCE GROUNDED</div><p id="analysis-model"></p></div>
+              <div class="analysis-results-grid">
+                <article class="analysis-result-card summary-result-card"><h4>Five-line executive summary</h4><ol class="summary-list" id="summary-list"></ol><details class="detailed-summary"><summary>Read the detailed summary</summary><div id="detailed-summary"></div></details></article>
+                <article class="analysis-result-card insights-result-card"><h4>Key findings</h4><div id="findings-list"></div></article>
+              </div>
+              <div class="result-warnings analysis-warnings" id="analysis-warnings" hidden></div>
+            </section>
+          </section>
+          <div class="dashboard-grid">
+            <article class="panel summary-panel">
+              <div class="panel-title"><span class="panel-icon violet-icon" aria-hidden="true">✳</span><div><h3>Executive summary</h3><p>The big picture, in plain language</p></div></div>
+              <div class="empty-state summary-empty" id="summary-empty"><div class="empty-art summary-art" aria-hidden="true"><span></span><span></span><span></span></div><strong>Your story starts here</strong><p>Upload a document to see a clear, concise summary of what matters most.</p></div>
+              <div class="dashboard-summary-content" id="summary-content" hidden><ol id="dashboard-summary-list"></ol><details><summary>Read detailed summary</summary><p id="dashboard-detailed-summary"></p></details></div>
+            </article>
+            <article class="panel insights-panel">
+              <div class="panel-title"><span class="panel-icon peach-icon" aria-hidden="true">✧</span><div><h3>Key insights</h3><p>Details worth a closer look</p></div></div>
+              <div class="insight-placeholders" id="insight-placeholders" aria-label="Insights will appear here"><div class="insight-placeholder"><span class="placeholder-symbol">↗</span><span class="placeholder-line"></span><span class="placeholder-line short"></span></div><div class="insight-placeholder"><span class="placeholder-symbol lilac">◷</span><span class="placeholder-line"></span><span class="placeholder-line short"></span></div><div class="insight-placeholder"><span class="placeholder-symbol mint">◎</span><span class="placeholder-line"></span><span class="placeholder-line short"></span></div></div>
+              <div class="dashboard-insights" id="dashboard-insights" hidden></div>
+              <p class="panel-empty-caption" id="insights-empty-caption">Insight cards will appear when a document is analyzed.</p>
+            </article>
+            <article class="panel charts-panel">
+              <div class="panel-title"><span class="panel-icon blue-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M3 16V9m5 7V4m5 12v-5m5 5H2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span><div><h3>Visual analytics</h3><p>Numbers, made easier to explore</p></div></div>
+              <div class="chart-empty" id="chart-empty-state"><div class="chart-empty-mark" aria-hidden="true">↗</div><p>Charts appear when Teddy finds enough structured data to support them.</p></div>
+              <div class="analytics-content" id="analytics-content" hidden>
+                <div class="analytics-kpis" id="analytics-kpis"></div>
+                <div class="charts-grid" id="charts-grid"></div>
+                <div class="analytics-comparisons" id="analytics-comparisons" hidden><h4>Comparison tables</h4><div id="comparison-tables"></div></div>
+                <div class="analytics-timeline" id="analytics-timeline" hidden><h4>Timeline</h4><ol id="timeline-events"></ol></div>
+                <div class="analytics-warnings" id="analytics-warnings" hidden></div>
+              </div>
+            </article>
+            <article class="panel highlights-panel">
+              <div class="panel-title"><span class="panel-icon yellow-icon" aria-hidden="true">❝</span><div><h3>Document highlights</h3><p>Important passages, with their sources</p></div></div>
+              <div class="quote-empty"><span class="quote-mark" aria-hidden="true">“</span><div><span class="placeholder-line"></span><span class="placeholder-line medium"></span><span class="placeholder-line short"></span><div class="source-placeholder"><span></span> Page and section references</div></div></div>
+              <p class="panel-empty-caption">Highlights and source references will be grounded in your file.</p>
+            </article>
+            <article class="panel chat-panel" id="chat-panel">
+              <div class="panel-title"><span class="panel-icon navy-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M17 9.5a6.5 6.5 0 0 1-6.5 6.5H4l1.1-2.8A6.5 6.5 0 1 1 17 9.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 9.5h.01M10.5 9.5h.01M14 9.5h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><div><h3>Chat with your document</h3><p>Ask a follow-up. Find the source.</p></div></div>
+              <div class="chat-empty" id="chat-empty"><div class="chat-orbit" aria-hidden="true"><span>✦</span></div><strong id="chat-empty-title">Good questions start with context.</strong><p id="chat-empty-message">Upload a document to start a grounded conversation. Teddy will answer from extracted passages and show the sources it used.</p><div class="chat-suggestions" id="chat-suggestions"></div></div>
+              <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-relevant="additions"></div>
+              <p class="chat-status" id="chat-status" aria-live="polite" hidden></p>
+              <p class="chat-error" id="chat-error" role="alert" hidden></p>
+              <form class="chat-input-shell" id="chat-form">
+                <textarea id="chat-question" rows="2" maxlength="1000" placeholder="Ask a question about this document…" aria-label="Question about the uploaded document" disabled></textarea>
+                <button id="chat-send" type="submit" disabled aria-label="Send question">↑</button>
+              </form>
+              <p class="chat-limit-note" id="chat-limit-note">Upload a document to enable chat. Questions are limited to 1,000 characters.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="how-section" id="how-it-works" aria-labelledby="how-heading">
+          <div class="how-intro"><div class="step-label"><span>✦</span> A CLEARER WAY TO READ</div><h2 id="how-heading">From pages to perspective.</h2><p>Teddy is being built to make long documents feel a little more human.</p></div>
+          <div class="steps"><div class="how-step"><span class="step-number">01</span><div><strong>Bring your file</strong><p>Start with the document you want to understand.</p></div></div><div class="step-connector" aria-hidden="true"></div><div class="how-step"><span class="step-number">02</span><div><strong>See what matters</strong><p>Get a grounded overview with useful details and visuals.</p></div></div><div class="step-connector" aria-hidden="true"></div><div class="how-step"><span class="step-number">03</span><div><strong>Ask better questions</strong><p>Explore the source and follow your curiosity.</p></div></div></div>
+        </section>
+      </main>
+      <footer class="footer"><a class="brand footer-brand" href="#top"><span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span><span class="brand-copy"><strong>Teddy</strong><small>SMART AI ANALYST</small></span></a><span>Thoughtful document analysis, built in the open.</span><a href="#top" class="back-top">Back to top ↑</a></footer>
+    </div>
+  </body>
+</html>
